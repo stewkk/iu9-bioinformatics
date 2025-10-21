@@ -1,3 +1,4 @@
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/fF1RWSe_)
 # Лабораторная работа 3. Алгоритм Хиршберга для глобального выравнивания
 
 Цель лабораторной — изучить алгоритм Хиршберга, который решает задачу глобального парного выравнивания последовательностей с использованием линейной памяти \(O(min(m,n)\) вместо квадратичной \(O(mn)\).
