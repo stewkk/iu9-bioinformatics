@@ -1,6 +1,7 @@
 from typing import Callable, Tuple
 import argparse
 import sys
+from enum import IntEnum
 
 PRINT_MAX_LINE_LENGTH = 80
 DEBUG = False
@@ -34,21 +35,68 @@ def needleman_wunsch(seq1: str,
         aligned_seq1: The first aligned sequence, e.g. 'ACCGT'
         aligned_seq2: The second aligned sequence, e.g. 'AC-GT'
     """
-    pass 
     # Initialize the score matrix.
-    # score_matrix = [[0 for _ in range(ncol)] for _ in range(nrow)]
-    # ...
+    ncol = len(seq2)+1
+    nrow = len(seq1)+1
+    score_matrix = [[0 for _ in range(ncol)] for _ in range(nrow)]
 
-    # if DEBUG:
-    #     print_array(score_matrix)
+    # Initialize backtracking matrix.
+    class Step(IntEnum):
+        GAP_SECOND = 1
+        GAP_FIRST = 2
+        TAKE_BOTH = 3
+
+    backtracking_matrix = [[Step.GAP_SECOND for _ in range(ncol)] for _ in range(nrow)]
+
+    # Fill base elements.
+    for i in range(nrow):
+        score_matrix[i][0] = i*gap_penalty
+        backtracking_matrix[i][0] = Step.GAP_SECOND
+    for j in range(ncol):
+        score_matrix[0][j] = j*gap_penalty
+        backtracking_matrix[0][j] = Step.GAP_FIRST
+
+    # Fill score and backtracking matrices.
+    for i in range(1, nrow):
+        for j in range(1, ncol):
+            score_matrix[i][j], backtracking_matrix[i][j] = max(
+                (score_matrix[i-1][j]+gap_penalty, Step.GAP_SECOND),
+                (score_matrix[i][j-1]+gap_penalty, Step.GAP_FIRST),
+                (score_matrix[i-1][j-1]+score_fun(seq1[i-1], seq2[j-1]), Step.TAKE_BOTH),
+            )
+
+
+    if DEBUG:
+        print_array(score_matrix)
+        print()
+        print_array(backtracking_matrix)
+        print()
 
 
     # Traceback.
-    # aligned_seq1 = ''
-    # aligned_seq2 = ''
-    # ...
-    
-    #return score_matrix[-1][-1], aligned_seq1, aligned_seq2
+    aligned_seq1 = list()
+    aligned_seq2 = list()
+
+    i, j = nrow-1, ncol-1
+    while i != 0 or j != 0:
+        step = backtracking_matrix[i][j]
+        match step:
+            case Step.GAP_FIRST:
+                i, j = i, j-1
+                aligned_seq1.append('-')
+                aligned_seq2.append(seq2[j])
+            case Step.GAP_SECOND:
+                i, j = i-1, j
+                aligned_seq2.append('-')
+                aligned_seq1.append(seq1[i])
+            case Step.TAKE_BOTH:
+                i, j = i-1, j-1
+                aligned_seq1.append(seq1[i])
+                aligned_seq2.append(seq2[j])
+    aligned_seq1 = ''.join(aligned_seq1[::-1])
+    aligned_seq2 = ''.join(aligned_seq2[::-1])
+
+    return score_matrix[-1][-1], aligned_seq1, aligned_seq2
 
 def print_array(matrix: list):
     for row in matrix:
