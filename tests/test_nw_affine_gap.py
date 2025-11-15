@@ -139,7 +139,7 @@ def test_nw_affine_gap_20():
 def test_nw_affine_gap_21():
     aln1, aln2, score = align.needleman_wunsch_affine("ACGGCTT", "ACGT")
     assert aln1 == "ACGGCTT"
-    assert aln2 == "ACG---T"
+    assert aln2 == "AC-G--T"
     assert score == 8
 
 def test_nw_affine_gap_22():

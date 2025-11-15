@@ -1,4 +1,5 @@
 from typing import Callable, Tuple
+import copy
 
 DEBUG = False
 
@@ -26,29 +27,77 @@ def needleman_wunsch_affine(seq1: str,
     score - score of the alignment
     '''
 
-    #infinity = 2 * gap_open + (n + m - 2) * gap_extend + 1
+    n = len(seq1)+1
+    m = len(seq2)+1
     infinity = float('-inf')
 
     # 1. Initialize matrices
 
+    score_match = [[0 for _ in range(m)] for _ in range(n)]
+    score_insertion = copy.deepcopy(score_match)
+    score_deletion = copy.deepcopy(score_match)
+    result = copy.deepcopy(score_match)
+
+    score_match[0][0] = 0
+    result[0][0] = 0
+    for i in range(1, n):
+        score_match[i][0] = infinity
+        score_insertion[i][0] = infinity
+        score_deletion[i][0] = gap_open + (i-1)*gap_extend
+        result[i][0] = score_deletion[i][0]
+    for j in range(1, m):
+        score_match[0][j] = infinity
+        score_insertion[0][j] = gap_open + (j-1)*gap_extend
+        score_deletion[0][j] = infinity
+        result[0][j] = score_insertion[0][j]
 
     # 2. Fill matrices
-    # We assume that consecutive gaps on different sequences are not allowed
     for i in range(1, n):
         for j in range(1, m):
-            pass
+            score_match[i][j] = max(
+                score_match[i-1][j-1] + score_fun(seq1[i-1], seq2[j-1]),
+                score_insertion[i-1][j-1] + score_fun(seq1[i-1], seq2[j-1]),
+                score_deletion[i-1][j-1] + score_fun(seq1[i-1], seq2[j-1]),
+            )
+            score_insertion[i][j] = max(
+                score_insertion[i][j-1] + gap_extend,
+                score_match[i][j-1] + gap_open,
+                score_deletion[i][j-1] + gap_extend,
+            )
+            score_deletion[i][j] = max(
+                score_deletion[i-1][j] + gap_extend,
+                score_match[i-1][j] + gap_open,
+                score_insertion[i-1][j] + gap_extend,
+            )
+            result[i][j] = max(
+                score_deletion[i][j],
+                score_insertion[i][j],
+                score_match[i][j],
+            )
 
 
     # 3. Traceback
-    aln1 = ''
-    aln2 = ''
-    i = len(seq1)
-    j = len(seq2)
+    aln1 = list()
+    aln2 = list()
+    i = n-1
+    j = m-1
     while i > 0 or j > 0:
-        pass
-
-    
-    return aln1[::-1], aln2[::-1], score
+        current_score = result[i][j]
+        if i > 0 and j > 0 and score_match[i][j] == current_score:
+            aln1.append(seq1[i-1])
+            aln2.append(seq2[j-1])
+            i -= 1
+            j -= 1
+        elif j > 0 and score_insertion[i][j] == current_score:
+            aln1.append('-')
+            aln2.append(seq2[j-1])
+            j -= 1
+        else:
+            aln1.append(seq1[i-1])
+            aln2.append('-')
+            i -= 1
+            
+    return ''.join(aln1[::-1]), ''.join(aln2[::-1]), result[n-1][m-1]
 
 def print_array(matrix: list):
     for row in matrix:
