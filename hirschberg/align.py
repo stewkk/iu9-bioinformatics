@@ -25,7 +25,9 @@ def hirschberg(seq1: str,
     aln2 - second sequence in alignment
     score - score of alignment
     '''
-    pass
+    if len(seq1) <= 1 or len(seq2) <= 1:
+        return needleman_wunsch(seq1, seq2, score_fun=score_fun, gap_score=gap_score)
+    return 0
 
 
 
