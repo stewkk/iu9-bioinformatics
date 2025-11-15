@@ -1,4 +1,5 @@
 import hirschberg.align as align
+import random
 
 def test_hirschberg_1():
     aln1, aln2, score = align.hirschberg("ACGT", "ACGT")
@@ -122,3 +123,41 @@ def test_hirschberg_18():
     assert len(aln1) == len(aln2)
     assert len(aln1) == 8
     assert score == 80
+
+
+def test_linmem_last_line():
+    last_line = align.linmem_last_line('AT', 'ACT')
+
+    assert last_line == [-10, 0, 1, 5]
+
+
+def test_linmem_last_line_2():
+    last_line = align.linmem_last_line('TC', 'TCA')
+
+    assert last_line == [-10, 0, 10, 5]
+
+
+def test_get_mid_j():
+    j = align.get_mid_j([-10, 0, 1, 5], [5, 10, 0, -10])
+
+    assert j == 1
+
+
+def generate_random_seq(n: int) -> str:
+    seq = list()
+    for _ in range(n):
+        seq.append(random.choice(['A', 'C', 'T']))
+
+    return ''.join(seq)
+
+
+def test_stress_hirschberg_against_classic_nw():
+    random.seed(42)
+    for _ in range(10000):
+        seq1 = generate_random_seq(10)
+        seq2 = generate_random_seq(10 + random.randint(-3, 3))
+
+        _, _, score_hirschberg = align.hirschberg(seq1, seq2)
+        _, _, score_nw = align.needleman_wunsch(seq1, seq2)
+
+        assert score_hirschberg == score_nw

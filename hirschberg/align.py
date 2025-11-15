@@ -9,6 +9,38 @@ def score_fun(a: str,
     return match_score if a == b else mismatch_score
 
 
+def linmem_last_line(seq1: str, seq2: str, score_fun: Callable = score_fun, gap_score: int = -5) -> list[int]:
+    '''
+    вычисляет последнюю строку матрицы NW, используя только две строки в памяти
+    '''
+    score_first = list()
+    score_second = [gap_score*i for i in range(len(seq2)+1)]
+    for i in range(len(seq1)):
+        score_first = score_second[:]
+        score_second[0] = score_first[0]+gap_score
+        for j in range(1, len(seq2)+1):
+            score_second[j] = max(score_second[j-1]+gap_score,
+                                  score_first[j]+gap_score,
+                                  score_first[j-1]+score_fun(seq1[i], seq2[j-1]))
+
+    return score_second
+
+
+def get_mid_j(mid_line_left, mid_line_right):
+    '''
+    находит оптимальную позицию разделения второй последовательности
+    '''
+    mx_j = 0
+    mx_val = -10000000
+    for j in range(len(mid_line_left)):
+        val = mid_line_left[j] + mid_line_right[j]
+        if val > mx_val:
+            mx_val = val
+            mx_j = j
+
+    return mx_j
+
+
 def hirschberg(seq1: str, 
                seq2: str, 
                score_fun: Callable = score_fun, 
@@ -27,8 +59,32 @@ def hirschberg(seq1: str,
     '''
     if len(seq1) <= 1 or len(seq2) <= 1:
         return needleman_wunsch(seq1, seq2, score_fun=score_fun, gap_score=gap_score)
-    return 0
 
+    is_swapped = False
+    if len(seq2) > len(seq1):
+        is_swapped = True
+        seq1, seq2 = seq2, seq1
+
+    mid_i = len(seq1) // 2
+    left_part = seq1[:mid_i]
+    right_part = seq1[mid_i:]
+
+    # forward pass
+    mid_line_left = linmem_last_line(left_part, seq2, score_fun, gap_score)
+    # backward pass
+    mid_line_right = linmem_last_line(right_part[::-1], seq2[::-1], score_fun, gap_score)[::-1]
+
+    mid_j = get_mid_j(mid_line_left, mid_line_right)
+
+    aln1_left, aln2_left, score_left = hirschberg(seq1[:mid_i], seq2[:mid_j], score_fun, gap_score)
+    aln1_right, aln2_right, score_right = hirschberg(seq1[mid_i:], seq2[mid_j:], score_fun, gap_score)
+
+    aln1 = aln1_left+aln1_right
+    aln2 = aln2_left+aln2_right
+    score = score_left+score_right
+    if is_swapped:
+        aln1, aln2 = aln2, aln1
+    return aln1, aln2, score
 
 
 def needleman_wunsch(seq1: str, seq2: str, score_fun: Callable = score_fun, gap_score: int = -5):
@@ -86,9 +142,8 @@ def print_array(matrix: list):
 
 
 if __name__ == "__main__":    
-    #aln1, aln2, score = hirschberg("ATCT", "ACT", gap_score=-5)
-    aln1, aln2, score = needleman_wunsch("ATCT", "ACT", gap_score=-5)
-    
+    aln1, aln2, score = hirschberg("ATCT", "ACT", gap_score=-5)
+
     assert len(aln1) == len(aln2)
     print(aln1)
     print(aln2)
